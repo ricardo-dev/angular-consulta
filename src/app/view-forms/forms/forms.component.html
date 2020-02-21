@@ -1,0 +1,65 @@
+<h1>Exemplo de Formulários (ReactiveForms)</h1>
+
+
+<form [formGroup]="formExample" (ngSubmit)="submit()">
+    <!--Form Simples-->
+    <h4>Dados Gerais</h4>
+    <div>
+        <input formControlName="name" placeholder="Nome*" required>
+        <span *ngIf="f.name.errors && f.name.errors.required" >
+            Nome é <strong>Obrigatório!</strong>
+        </span>
+    </div>
+    <div>
+        <input formControlName="cpf" placeholder="CPF" required>
+        <span *ngIf="f.cpf.errors && f.cpf.errors.required">
+            CPF é <strong>Obrigatótio</strong>
+        </span>
+    </div>
+    <div>
+        <input type="file" (change)="getFile($event.target.files)" >
+    </div>
+
+    <!--FormGroup-->
+    <h4>Endereço</h4>
+    <div formGroupName="address">
+        <div>
+            <input formControlName="cep" placeholder="CEP" >
+            <span *ngIf="f.address.controls.cep.errors && f.address.controls.cep.errors.required">
+                CEP é <strong>Obrigatório</strong>
+            </span>
+        </div>
+        <div>
+            <input formControlName="city" placeholder="Cidade" >
+        </div>
+        <div>
+            <input formControlName="street" placeholder="Rua" >
+        </div>
+        <div>
+            <input formControlName="complement" placeholder="Complemento" >
+        </div>
+    </div>
+
+    <!--FormArray-->
+    <h4>Contato</h4>
+    <a href="javascript:;" (click)="addContact()">Adicionar contato</a> - <a href="javascript:;" (click)="clearAllContacts()">Limpar contatos</a>
+    <div formArrayName="contacts" *ngFor="let item of formExample.get('contacts').controls; let i = index;">
+         <div [formGroupName]="i">
+            <div>
+                <input formControlName="telephone" placeholder="Telefone">
+                <span *ngIf="f.contacts.controls[i].controls.telephone.errors && f.contacts.controls[i].controls.telephone.errors.required">
+                    Telefone é <strong>Obrigatório!</strong>
+                </span>
+            </div>
+            <div>
+                <input formControlName="email" placeholder="Email">
+            </div>
+            <a href="javascript:;" (click)="removeContact(i)">Remover</a>
+         </div>
+         <!--Chosen name: {{ formExample.controls.contacts.controls[i].controls.telephone.value }}-->
+    </div>
+
+    <div>
+        <button>Salvar</button>
+    </div>
+</form>

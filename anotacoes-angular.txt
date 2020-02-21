@@ -1,0 +1,247 @@
+########################### Angular CLI
+sudo (linux) npm install -g @angular/cli - instalar
+
+ng version - verificando versao instalada
+
+### criando projeto 
+ng new nome_app - criar projeto
+cd nome_app
+
+### executando projeto para teste
+ng serve - executa servidor em produção
+
+### build da aplicação
+ng build nome_app -c
+ng build nome_app -c production 
+
+### inserir novo component
+ng g (generate) c (component) nome_componente (--skip-tests) -it (template) -is (style)
+
+### novo service
+ng g s (services) oportunidade --skip-tests
+
+### novo módulo
+ng g m nome_modulo --routing (já cria arquivo de rotas)
+ng g c nome_modulo/nome_component
+ng g s nome_modulo/nome_servico
+
+########################### Estrutura de arquivo 
+
+todo módulo, ou importação de biblioteca deve ser importado no app.module.ts -> arquivo main do projeto
+...
+imports:[ ..., ..., ..., ],**
+
+html principal do projeto é o app.component.html e app.component.css
+
+criação de componente -> deve ser verificado se o componente será reutilizado ou não
+
+########################### estrutura
+
+component.ts -> arquivo typescript para as funcionalidades
+component.html -> arquivo .html do component
+component.css -> estilo do componente
+
+botao referencia a alguma funcao
+...ts -> onSend(){ ... }   ...html -> <button type="submit" (click)="onSend()" ... />
+...ta -> onSend(){ ... }   ...html -> <a href='javascript:;' (click)='onSend()' ... />
+
+####################### ativando o ngModel
+app.module.ts
+	-> import {FormsModule} from '@angular/forms';
+	-> imports:[ ..., FormsModule, ],
+	
+fazer referencia de valores
+...ts
+	nome = "joao ... "; 
+	users=[];
+	imput -> <input type="text" [(ngModel)]="nome" /> (app.component.ts import {FormsModule} from '@angular/forms';)**
+		<p> {{nome}} </p>
+	<ul>
+  		<li *ngFor="let user of users">{{ user.name }}</li>
+	</ul>
+
+####################### reactive forms
+
+app.module.ts
+	import { ReactiveFormsModule } from '@angular/forms';
+	imports { ..., ReactiveFormsModule } from '@angular/forms';
+
+app.component.ts
+	constructor(private formBuilder, FormBuilder){}
+
+	typeForm: FormGroup;
+	getFormGroup() {
+		return this.formBuilder.group({
+			variavel1: ['', Validators.required],
+			variavel2: ['', [Validators.required, Validators.email]],
+			variavel3: [null, [Validators.required, requiredFileType('png')]], 
+			...
+		});
+	}
+	ngOnInit(){
+		this.typeForm = this.getFormGroup();
+		// pegar valor default
+		this.typeForm.get('variavel1').setValue("o que eu quero!!!");
+	}
+	functionSubmit(){
+		if(this.typeForm.invalid) {}
+		else{ this.variavel = this.typeForm.value; this.typeForm.reset({variavel1:null, variavel2:'', ..., ...}) }
+	}
+	get f() { return this.typeForm.controls; } // #validação
+
+app.component.html
+	
+	<form ... [formGroup]="typeForm" (ngSubmit)="functionSubmit()"> // parametros ex: (keyup)="function($event.target.value)" : function(data: string)
+		<input formControlName="varivavel1" type="text" ... />
+		<div *ngIf="f.variavel1.errors && f.variavel1.errors.required">Mensagem</div>
+	</form>	
+
+########################### uso da chamada de api
+
+app.module.ts
+	import { HttpClientModule } from '@angular/common/http'
+	imports { ..., HttpClientModule },
+
+app.service.ts -- servico criado automaticamente
+	constructor(private httpClient: HttpClient) {}
+
+	findById(id: number): Observable<tipo> {                   # se nao tiver o Observable, o retorno é do tipo 'any'
+		return this.httpClient.get<tipo>('url/id');
+	}
+	...
+
+########################### consumo
+
+app.component.ts
+	constructor(private service: Service) {}
+
+	user: tipo = {}; # ou lista
+	getUserById(){
+		this.service.findById(id)
+			.subscribe(
+				data => { this.user = <tipo> data },
+				error => {this.error = error }
+			)	
+	}
+	(...)
+
+########################### HttpInterceptor - toda requisicao HttpCliente*
+
+cria nova classe
+import { HttpInterceptor, HttpHandler, HttpEvent, HttpRequest } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable
+export class minhaClass implements HttpInterceptor {
+	
+	shared: Shared;
+	constructor( ) {this.shared = Shared.getInstance();}
+	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>{
+		let authReq: any;
+		if(this.shared.isLoggedIn()){
+			authReq = req.clone({
+				setHeaders:'Authorization':`Bearer ${this.shared.token}`;
+			});
+			return next.handle(authReq);
+		}else
+			return next.handle(req);
+	}
+}
+
+app.module.ts
+	providers: [
+		...,
+		{ provide: HTTP_INTERCEPTORS, useClass: minhaClass, multi: true },
+	]	
+
+########################### multiplos módulos (reutilização)
+
+cria projeto app.module
+
+cria novo modulo view.module
+cria componente dentro do modulo view
+
+app.module.ts -> (...)imports:[ ..., view.module](...)
+
+view.module.ts ->  
+	declarations: [nome], 
+	exports:[nome], (...)
+view.component.html -> <p> Teste!!</p>
+
+app.component.html -> <selector-view-component.ts></...> 
+
+################ Navigation
+
+criando projeto (App) --routing
+criar dois components - home and notfound
+criar novo modulo (View) --routing
+criar view/component c1
+criar view/component c2
+	app.component.html - deixa apenas o router-outlet
+	app-routing.module.ts
+		... Routes = [
+			{ path:'', component: homeComponent}, # aponta para componente
+			{ path:'view', loadChild:'pathModulo#ViewModule'} # aponta para outro modulo
+			{ path:'**', redirectTo:'notFound'} # caso nao reconheça o path, redirecione para esse path
+			{ path:'notFound', component: notFoundComponent } 
+		    ];
+	view-routing.module.ts
+		... Routes = [
+			{ path:'', component: c1Component }, # neste caso "view"
+			{ path:'c2/:id', component: c2Component }, # router com parametro "view/c2/x"
+			{ path:'c2', component: c2Component } # deixar parametro opcional "view/c2"
+		    ];
+	
+c2.component.ts # pegando o id do parametro
+	constructor(private activatedRoute: ActivatedRoute) {}
+	id = null;
+	ngOnInit(){
+		this.activeRoute.paramMap.subscribe((params)=>{
+			const routeId = params.get("id");
+			if(routerId) { this.id = routerId; ... }
+			else { ... } 
+		});		
+	}
+fazendo as rotas
+	html:
+		<a [routerLink]="['path-que-quero']" routerLinkActive="router-link-active"> página </a>
+	ts  :
+		constructor(private router: Router) {}
+		...
+		this.router.navigate(['path-que-quero']);
+
+################ Navigation AuthGuard - proteger rotas
+
+export class minhaClasseAuthGuard implements canActivate {
+	
+	shared: Shared;
+
+	constructor(private router: Router){
+		this.shared = SharedService.getInstance();
+	}
+	
+	canActivate(
+	  route: ActivatedRouteSnapshot,
+	  state: RouterStateSnapshot) : Observable<boolean> | boolean {
+		if(this.shared.isLoggedIn()) { return true }
+		this.router.navigate(['/login']);
+	}
+}
+
+app.module.ts
+	providers: [ ..., minhaClasseAuthGuard, ],
+
+name-app-or-module-routing.module.ts
+
+	{ path:'', component:'path-component, canActivate: [minhaClassAuthGuard] }, ...
+
+
+################ pipes e custom pipes
+
+
+
+################ diretivas e mascaras
+
+
+
+

@@ -1,0 +1,13 @@
+input[name='File'] {
+    display: none;
+}
+  
+.custom-file-control {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    background-color: #d4d4d4;
+    border-radius: 5px;
+}
